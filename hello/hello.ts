@@ -1,5 +1,6 @@
 import { api } from "encore.dev/api";
 import { appMeta } from "encore.dev";
+import { getAuthData } from "~encore/auth";
 
 // Landing page with usage instructions.
 export const index = api.raw(
@@ -29,6 +30,7 @@ const landingPage = `<!DOCTYPE html>
     .endpoint { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
     .method { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; }
     .get { background: #15803d; color: #fff; }
+    .post { background: #1d4ed8; color: #fff; }
     .path { font-family: monospace; color: #e5e5e5; }
     .desc { color: #737373; font-size: 0.9rem; margin-bottom: 1.25rem; }
     a { color: #60a5fa; }
@@ -48,8 +50,39 @@ const landingPage = `<!DOCTYPE html>
     <span class="path">/hello/:name</span>
     <code>hello.get</code>
   </div>
-  <p class="desc">Returns a personalized greeting.</p>
+  <p class="desc">Returns a personalized greeting (public).</p>
   <pre><code>curl {{baseUrl}}/hello/World</code></pre>
+
+  <h2>Authentication</h2>
+  <p>Log in to get a JWT, then call protected endpoints with the <code>Authorization</code> header.</p>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <span class="path">/auth/login</span>
+    <code>auth.login</code>
+  </div>
+  <p class="desc">Returns a JWT token. Demo: <code>demo@example.com</code> / <code>password123</code></p>
+  <pre><code>curl -X POST {{baseUrl}}/auth/login \\
+  -H "Content-Type: application/json" \\
+  -d '{"email":"demo@example.com","password":"password123"}'</code></pre>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <span class="path">/auth/profile</span>
+    <code>auth.profile</code>
+  </div>
+  <p class="desc">Returns the authenticated user's profile (requires token).</p>
+  <pre><code>curl {{baseUrl}}/auth/profile \\
+  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
+
+  <div class="endpoint">
+    <span class="method get">GET</span>
+    <span class="path">/hello/me</span>
+    <code>hello.me</code>
+  </div>
+  <p class="desc">Returns a personalized greeting for the logged-in user (requires token).</p>
+  <pre><code>curl {{baseUrl}}/hello/me \\
+  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
 
   <h2>Next steps</h2>
   <p>Check out these topics to keep building:</p>
@@ -74,6 +107,15 @@ export const get = api(
 interface Response {
   message: string;
 }
+
+// Returns a greeting for the authenticated user.
+export const me = api(
+  { expose: true, method: "GET", path: "/hello/me", auth: true },
+  async (): Promise<Response> => {
+    const auth = getAuthData()!;
+    return { message: `Hello ${auth.email}!` };
+  },
+);
 
 // ==================================================================
 
