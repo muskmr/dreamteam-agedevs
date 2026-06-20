@@ -54,7 +54,17 @@ const landingPage = `<!DOCTYPE html>
   <pre><code>curl {{baseUrl}}/hello/World</code></pre>
 
   <h2>Authentication</h2>
-  <p>Log in to get a JWT, then call protected endpoints with the <code>Authorization</code> header.</p>
+  <p>Register or log in to get a JWT, then call protected endpoints with the <code>Authorization</code> header. Users are stored in PostgreSQL with scrypt-hashed passwords.</p>
+
+  <div class="endpoint">
+    <span class="method post">POST</span>
+    <span class="path">/auth/register</span>
+    <code>auth.register</code>
+  </div>
+  <p class="desc">Creates a new user (password min 8 chars).</p>
+  <pre><code>curl -X POST {{baseUrl}}/auth/register \\
+  -H "Content-Type: application/json" \\
+  -d '{"email":"you@example.com","password":"supersecret"}'</code></pre>
 
   <div class="endpoint">
     <span class="method post">POST</span>
