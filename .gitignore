@@ -1,6 +1,8 @@
-.encore
-encore.gen.go
-encore.gen.cue
-/.encore
-node_modules
-/encore.gen
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+projects/*/
+!projects/.gitkeep

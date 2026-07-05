@@ -1,0 +1,9 @@
+id: planner
+role: Planner
+humanInLoop: false
+writes:
+  - contracts
+  - reports/planner
+requires:
+  - design_approved
+description: Decomposes approved design and prepares compliance contract.

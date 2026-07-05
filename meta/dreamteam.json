@@ -1,0 +1,17 @@
+{
+  "name": "AI SDLC DREAMTEAM",
+  "ollama": {
+    "baseUrl": "http://localhost:11434",
+    "model": "llama3.2"
+  },
+  "agents": [
+    "designer",
+    "planner",
+    "specificator",
+    "coder",
+    "reviewer",
+    "tester",
+    "reporter",
+    "compliancer"
+  ]
+}

@@ -1,0 +1,8 @@
+id: designer
+role: Designer
+humanInLoop: true
+writes:
+  - designs
+  - reports/designer
+requires: []
+description: Prepares high-level software designs. Interacts with user until design is approved.

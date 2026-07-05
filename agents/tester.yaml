@@ -1,0 +1,9 @@
+id: tester
+role: Tester
+humanInLoop: false
+writes:
+  - tests
+  - reports/tester
+requires:
+  - code
+description: Creates and runs tests according to compliance contract.
