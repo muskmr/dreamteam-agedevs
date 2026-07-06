@@ -45,9 +45,20 @@ any prompt/agent call fails; `/api/health` reports `"ollama": false`.
   check trips when the Linux page cache is full (it reads free, not available, RAM).
   Fix by dropping caches: `sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'`,
   then retry.
-- Inference is **CPU-only and slow**: a single Designer prompt takes roughly
-  60s–3min. The full `approve` pipeline runs 7 more agents sequentially, so expect
-  several minutes. Be patient / use long timeouts when testing.
+- Inference is **CPU-only and slow** (measured on this VM, 4 cores): a single
+  Designer prompt takes ~40–90s, and clicking **Approve design** runs 7 more agents
+  sequentially and takes **~8–9 minutes total** (each agent ~40–120s).
+  - The web UI has **no progress indicator** — during these calls the buttons just
+    disable, so it looks frozen/"not working" but it is not. **Wait for it to
+    finish** (the `/api/.../approve` request is a single long HTTP call).
+  - **Do NOT re-click** Send/Approve or hit **New bundle / Retry** while a run is in
+    flight. Those mutate the project's `currentBundle`/`currentTry` in `meta.json`,
+    which desyncs the in-flight run and leaves half-written `contracts/` `specs/`
+    `code/` dirs (this is what "not working" usually turns out to be).
+  - To watch progress instead of guessing, tail the trace:
+    `find projects/<name>/v.1/trace -name events.jsonl -exec tail -f {} +`.
+  - Optional speed-up for iteration: pull `ollama pull llama3.2:1b` and start the API
+    with `OLLAMA_MODEL=llama3.2:1b npm run dev` (somewhat faster, lower-quality output).
 
 ### Build / test / lint
 
