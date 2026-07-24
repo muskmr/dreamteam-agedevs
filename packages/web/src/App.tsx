@@ -98,11 +98,14 @@ export default function App() {
   const [artifactContent, setArtifactContent] = useState("");
   const [trace, setTrace] = useState<TraceEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hostOs, setHostOs] = useState("unknown");
+  const [ollamaHintOpen, setOllamaHintOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const health = await getHealth();
     setOllamaOk(health.ollama);
     if (health.model) setOllamaModel(health.model);
+    if (health.hostOs) setHostOs(health.hostOs);
     const list = await listProjects();
     setProjects(list);
     if (activeProject) {
@@ -277,7 +280,7 @@ export default function App() {
         </nav>
         <div
           className={`rail-footer${ollamaOk ? " ok" : ""}`}
-          title={ollamaOk ? "Ollama connected" : "Ollama offline"}
+          title={ollamaOk ? "Ollama connected" : "Ollama disconnected — click status in top bar"}
         >
           <span className="dot" />
         </div>
@@ -294,9 +297,55 @@ export default function App() {
             "Select or create a project"
           )}
         </div>
-        <div className={`topbar-status${ollamaOk ? " ok" : ""}`}>
-          <span className="dot" />
-          {ollamaOk ? "Ollama connected" : "Ollama offline"}
+        <div className="topbar-status-wrap">
+          <button
+            type="button"
+            className={`topbar-status${ollamaOk ? " ok" : " disconnected"}`}
+            onClick={() => setOllamaHintOpen((v) => !v)}
+            aria-expanded={ollamaHintOpen}
+          >
+            <span className="dot" />
+            {ollamaOk ? "Ollama connected" : "Ollama disconnected"}
+          </button>
+          {ollamaHintOpen && (
+            <div className="ollama-hint" role="dialog" aria-label="Ollama help">
+              {ollamaOk ? (
+                <p>
+                  Ollama is reachable from the app. Model: <code>{ollamaModel}</code>.
+                </p>
+              ) : (
+                <>
+                  <p className="ollama-hint-title">Host Ollama required</p>
+                  <p>
+                    The app runs in Podman; the model stays on the <strong>host</strong> (
+                    {hostOs}). Install and start Ollama on this machine, then refresh.
+                  </p>
+                  <ol>
+                    <li>
+                      Install from <code>https://ollama.com</code> (or package manager).
+                    </li>
+                    <li>
+                      Start the server: <code>ollama serve</code>
+                    </li>
+                    <li>
+                      Pull the model: <code>ollama pull {ollamaModel}</code>
+                    </li>
+                    <li>Click this status again or reload the page.</li>
+                  </ol>
+                </>
+              )}
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  setOllamaHintOpen(false);
+                  void refresh();
+                }}
+              >
+                Close / recheck
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

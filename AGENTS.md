@@ -18,6 +18,14 @@ SDLC tool. It is an npm-workspaces monorepo:
 
 ### Running the app (dev)
 
+**Recommended (Podman, option C):** `npm run podman:up` — see [README.md](README.md) and
+[docs/DEPLOY-PODMAN.md](docs/DEPLOY-PODMAN.md). App in one container; Ollama on the host.
+
+**Bare-metal Node** (macOS / Linux): `source env/aliases.sh` then `npm run dev`.
+Windows is not supported.
+
+In this Cloud VM specifically:
+
 - Load URL aliases once per shell: `source env/aliases.sh`
   (exports `$API_URL`, `$WEB_URL`, `$OLLAMA_URL`, plus `API_PORT` / `WEB_PORT` / `OLLAMA_PORT`).
 - Start both servers from the repo root: `npm run dev`

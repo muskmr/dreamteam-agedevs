@@ -28,7 +28,12 @@ export interface TraceEvent {
   meta?: Record<string, unknown>;
 }
 
-export async function getHealth(): Promise<{ ollama: boolean; model: string }> {
+export async function getHealth(): Promise<{
+  ollama: boolean;
+  model: string;
+  hostOs?: string;
+  ollamaUrlConfigured?: boolean;
+}> {
   const res = await fetch(`${API}/health`);
   return res.json();
 }

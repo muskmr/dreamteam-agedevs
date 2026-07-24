@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+.git
+projects/*/
+!projects/.gitkeep
+tmp
+*.log
+.env
+.env.local
+**/*.tsbuildinfo
+.cursor
