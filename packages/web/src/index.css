@@ -1,0 +1,144 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f1117;
+  color: #e6e8ef;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid #3d4460;
+  background: #1a1f2e;
+  color: #e6e8ef;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}
+
+button:hover {
+  background: #252b3d;
+}
+
+input,
+textarea,
+select {
+  background: #1a1f2e;
+  border: 1px solid #3d4460;
+  color: #e6e8ef;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  border-right: 1px solid #2a3045;
+  padding: 1rem;
+  background: #12151f;
+}
+
+.sidebar h1 {
+  font-size: 1rem;
+  margin: 0 0 1rem;
+  color: #8b9cff;
+}
+
+.sidebar nav button {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.main {
+  padding: 1.5rem;
+}
+
+.panel {
+  background: #161b28;
+  border: 1px solid #2a3045;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.chat-log {
+  min-height: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #0f1117;
+  border: 1px solid #2a3045;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.chat-msg {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background: #1a1f2e;
+}
+
+.chat-msg.user {
+  border-left: 3px solid #8b9cff;
+}
+
+.chat-msg.system {
+  border-left: 3px solid #4ade80;
+}
+
+.artifact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.artifact-list li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #2a3045;
+  cursor: pointer;
+}
+
+.artifact-list li:hover {
+  color: #8b9cff;
+}
+
+.artifact-content {
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.trace-event {
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #2a3045;
+}
+
+.status-ok {
+  color: #4ade80;
+}
+
+.status-warn {
+  color: #fbbf24;
+}
+
+.status-err {
+  color: #f87171;
+}

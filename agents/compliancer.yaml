@@ -1,0 +1,8 @@
+id: compliancer
+role: Compliancer
+humanInLoop: false
+writes:
+  - reports/compliancer
+requires:
+  - reporter
+description: Checks reports for design and spec matching.

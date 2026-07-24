@@ -1,0 +1,8 @@
+id: reporter
+role: Reporter
+humanInLoop: false
+writes:
+  - reports/reporter
+requires:
+  - tester
+description: Generates per-try iteration summary for the user.

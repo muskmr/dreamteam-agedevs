@@ -1,0 +1,8 @@
+id: reviewer
+role: Reviewer
+humanInLoop: false
+writes:
+  - reports/reviewer
+requires:
+  - code
+description: Reviews generated code against specification.

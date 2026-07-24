@@ -1,0 +1,9 @@
+id: specificator
+role: Specificator
+humanInLoop: false
+writes:
+  - specs
+  - reports/specificator
+requires:
+  - contract
+description: Writes markdown specifications and records agent approval.

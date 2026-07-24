@@ -1,0 +1,9 @@
+id: coder
+role: Coder
+humanInLoop: false
+writes:
+  - code
+  - reports/coder
+requires:
+  - spec_approved
+description: Generates code after spec is approved. Blocked until spec gate passes.
