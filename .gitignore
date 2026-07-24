@@ -6,3 +6,4 @@ dist/
 .env.local
 projects/*/
 !projects/.gitkeep
+*.tsbuildinfo
