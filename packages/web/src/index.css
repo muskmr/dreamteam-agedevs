@@ -171,6 +171,16 @@ textarea {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
+  border: 1px solid var(--border-strong);
+  background: var(--panel);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.topbar-status:hover {
+  border-color: #444;
+  color: var(--text);
 }
 
 .topbar-status .dot {
@@ -186,6 +196,58 @@ textarea {
 
 .topbar-status.ok {
   color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.topbar-status.disconnected {
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.topbar-status-wrap {
+  position: relative;
+}
+
+.ollama-hint {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: min(360px, 85vw);
+  z-index: 40;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.ollama-hint-title {
+  margin: 0 0 0.4rem;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.ollama-hint p {
+  margin: 0 0 0.6rem;
+}
+
+.ollama-hint ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+}
+
+.ollama-hint code {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.ollama-hint .btn-ghost {
+  width: 100%;
 }
 
 /* —— Left rail —— */

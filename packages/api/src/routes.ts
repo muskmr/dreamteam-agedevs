@@ -42,7 +42,13 @@ export function createApp() {
 
   app.get("/api/health", async (_req, res) => {
     const ollamaOk = await checkOllama(OLLAMA);
-    res.json({ status: "ok", ollama: ollamaOk, model: OLLAMA.model });
+    res.json({
+      status: "ok",
+      ollama: ollamaOk,
+      model: OLLAMA.model,
+      hostOs: process.env.HOST_OS_LABEL?.trim() || "unknown",
+      ollamaUrlConfigured: Boolean(process.env.OLLAMA_URL?.trim()),
+    });
   });
 
   app.get("/api/projects", async (_req, res) => {
