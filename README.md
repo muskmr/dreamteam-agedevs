@@ -30,10 +30,11 @@ git checkout <product-branch>
 npm run setup
 ```
 
-`npm run setup` runs [`scripts/setup.sh`](scripts/setup.sh): installs npm deps, checks Ollama, pulls `$OLLAMA_MODEL` (default `llama3.2`).
+[`scripts/setup.sh`](scripts/setup.sh) first **audits** the machine (OS, CPU arch, Node, npm, Ollama CLI, Ollama server). If anything is missing it prints a **numbered fix list with concrete commands** for your platform (macOS Apple Silicon / Intel, or Linux distro), then asks you to run `npm run setup` again. When the audit passes, it runs `npm install` and `ollama pull` for `$OLLAMA_MODEL` (default `llama3.2`).
 
-If Ollama is not installed, install it from https://ollama.com and re-run setup.  
-If the daemon is down: start `ollama serve` in another terminal, then re-run setup.
+The script does **not** silently install system packages with `sudo` / `curl|sh` — you run the printed commands yourself.
+
+Override model: `OLLAMA_MODEL=llama3.2:1b npm run setup`
 
 ## Run
 
