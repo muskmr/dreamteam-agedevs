@@ -107,3 +107,11 @@ jobs:
         run: |
           kill "$(cat /tmp/api.pid 2>/dev/null)" 2>/dev/null || true
           kill "$(cat /tmp/mock-ollama.pid 2>/dev/null)" 2>/dev/null || true
+
+  # Compatibility check name for ruleset "main-protection" (expects this exact context).
+  smoke-gate:
+    name: Smoke (mock Ollama)
+    runs-on: ubuntu-latest
+    needs: smoke
+    steps:
+      - run: echo "All matrix smoke jobs passed."
