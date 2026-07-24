@@ -193,7 +193,7 @@ export default function App() {
                   await refresh();
                 }}
               >
-                Retry try
+                Retry design
               </button>
               <button
                 onClick={async () => {
@@ -201,7 +201,7 @@ export default function App() {
                   await refresh();
                 }}
               >
-                New bundle
+                Restart design
               </button>
             </div>
           </div>
