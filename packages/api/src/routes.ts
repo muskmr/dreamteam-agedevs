@@ -11,6 +11,7 @@ import {
   startTry,
 } from "./orchestrator.js";
 import { readTrace } from "./trace.js";
+import { ollamaModel, ollamaUrl } from "./urls.js";
 import {
   createProject,
   getProjectMeta,
@@ -21,8 +22,8 @@ import {
 } from "./workspace.js";
 
 const OLLAMA = {
-  baseUrl: process.env.OLLAMA_URL ?? "http://localhost:11434",
-  model: process.env.OLLAMA_MODEL ?? "llama3.2",
+  baseUrl: ollamaUrl(),
+  model: ollamaModel(),
 };
 
 function sendOrchestratorError(res: express.Response, err: unknown): boolean {
