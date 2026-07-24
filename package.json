@@ -12,6 +12,7 @@
     "dev:container": "concurrently -n api,web -c blue,green \"npm run dev -w packages/api\" \"npm run dev:container -w packages/web\"",
     "podman:up": "bash scripts/podman-up.sh",
     "podman:down": "bash scripts/podman-down.sh",
+    "verify:a": "bash scripts/verify-a.sh",
     "build": "npm run build -w packages/web",
     "start": "npm run start -w packages/api"
   },
