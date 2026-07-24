@@ -61,7 +61,9 @@ export async function sendPrompt(name: string, prompt: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt }),
   });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Send prompt failed");
+  return data;
 }
 
 export async function approveDesign(name: string, summary: string) {
@@ -70,21 +72,33 @@ export async function approveDesign(name: string, summary: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ summary }),
   });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Approve failed");
+  return data;
 }
 
-export async function retryTry(name: string) {
+/** Same design iteration, new attempt — reuses prior prompt. */
+export async function retryDesign(name: string, note?: string) {
   const res = await fetch(`${API}/projects/${encodeURIComponent(name)}/retry`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ note }),
   });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Retry design failed");
+  return data;
 }
 
-export async function newBundle(name: string) {
+/** New design iteration — requires updated/supplemented prompt. */
+export async function restartDesign(name: string, prompt: string) {
   const res = await fetch(`${API}/projects/${encodeURIComponent(name)}/new-bundle`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
   });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Restart design failed");
+  return data;
 }
 
 export async function listArtifacts(name: string): Promise<{ ctx: TryContext; artifacts: string[] }> {
