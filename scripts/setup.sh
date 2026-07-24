@@ -102,16 +102,12 @@ deps_ok() {
 }
 
 print_fix_guide() {
-  local step=1
   cat <<HDR
 
 ────────────────────────────────────────────────────────
-Dependencies incomplete. Follow these steps in order,
-then run the installer again:
-
-  npm run setup
-
 Detected: ${OS_LABEL}
+Dependencies incomplete
+Follow steps below in order, then run the installer again:
 ────────────────────────────────────────────────────────
 HDR
 
