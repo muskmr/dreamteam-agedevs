@@ -55,11 +55,59 @@ detect_platform() {
       fi
       ;;
     MINGW*|MSYS*|CYGWIN*)
-      printf 'ERROR: Windows is not supported. Use macOS or Linux.\n' >&2
+      cat <<'WIN'
+
+────────────────────────────────────────────────────────
+Detected: Windows (native)
+Dependencies incomplete
+Follow steps below in order, then run the installer again:
+────────────────────────────────────────────────────────
+
+[1] Move to a supported OS
+    Problem:  Windows native is not supported by this installer.
+    Solution: Use macOS or Linux (x86_64 or arm64). Options:
+              - another machine with macOS/Linux
+              - a remote Linux VM / cloud instance
+              - dual-boot or a full Linux install
+              (WSL2 is not a supported/tested path.)
+    Commands: (none on Windows — continue on macOS or Linux)
+
+[2] On that Mac/Linux machine, clone the repo and run setup
+    Problem:  Toolchain must be installed where the app runs.
+    Solution: Open a terminal on macOS or Linux in the repo root.
+    Commands:
+      git clone <this-repo-url>
+      cd shiny-robo
+      git checkout <product-branch>
+      npm run setup
+
+────────────────────────────────────────────────────────
+WIN
       exit 1
       ;;
     *)
-      printf 'ERROR: Unsupported OS "%s". Supported: macOS, Linux. Not supported: Windows.\n' "$uname_s" >&2
+      cat <<UNK
+
+────────────────────────────────────────────────────────
+Detected: ${uname_s:-unknown} (${uname_m:-unknown})
+Dependencies incomplete
+Follow steps below in order, then run the installer again:
+────────────────────────────────────────────────────────
+
+[1] Switch to a supported OS
+    Problem:  OS "${uname_s:-unknown}" is not supported.
+    Solution: Use macOS (Apple Silicon or Intel) or Linux (x86_64 or arm64).
+    Commands: (boot or open a shell on macOS/Linux, then continue there)
+
+[2] On that machine, run the installer
+    Problem:  Setup must run on a supported platform.
+    Solution: From the repo root on macOS/Linux:
+    Commands:
+      cd <repo-root>
+      npm run setup
+
+────────────────────────────────────────────────────────
+UNK
       exit 1
       ;;
   esac
@@ -101,7 +149,120 @@ deps_ok() {
   [[ "$HAVE_NODE" -eq 1 && "$HAVE_NPM" -eq 1 && "$HAVE_OLLAMA" -eq 1 && "$OLLAMA_UP" -eq 1 ]]
 }
 
+print_node_commands() {
+  case "$OS_FAMILY" in
+    macos)
+      if [[ "$HAVE_BREW" -eq 1 ]]; then
+        cat <<'CMD'
+      brew install node
+CMD
+      else
+        cat <<'CMD'
+      # Option A — install Homebrew, then Node:
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      brew install node
+
+      # Option B — GUI/pkg from https://nodejs.org/ (LTS)
+CMD
+        if [[ "$ARCH" == "arm64" ]]; then
+          printf '      #           download the Apple Silicon build\n'
+        else
+          printf '      #           download the x64 / Intel build\n'
+        fi
+      fi
+      ;;
+    linux)
+      case "$DISTRO_ID" in
+        ubuntu|debian|linuxmint|pop)
+          cat <<'CMD'
+      curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+      sudo apt-get install -y nodejs
+CMD
+          ;;
+        fedora)
+          cat <<'CMD'
+      sudo dnf install -y nodejs npm
+CMD
+          ;;
+        arch|manjaro)
+          cat <<'CMD'
+      sudo pacman -S --needed nodejs npm
+CMD
+          ;;
+        opensuse*|sles)
+          cat <<'CMD'
+      sudo zypper install nodejs npm
+CMD
+          ;;
+        *)
+          cat <<CMD
+      # Distro: ${DISTRO_ID:-unknown} (like: ${DISTRO_LIKE:-n/a}), arch: ${ARCH}
+      # Option A — nvm:
+      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+      # restart the shell, then:
+      nvm install --lts
+
+      # Option B — binaries from https://nodejs.org/ (Linux ${ARCH})
+CMD
+          ;;
+      esac
+      ;;
+  esac
+}
+
+print_ollama_install_commands() {
+  case "$OS_FAMILY" in
+    macos)
+      if [[ "$HAVE_BREW" -eq 1 ]]; then
+        cat <<'CMD'
+      brew install ollama
+CMD
+      else
+        cat <<'CMD'
+      # Option A — install Homebrew, then:
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      brew install ollama
+
+      # Option B — macOS app from https://ollama.com/download
+CMD
+      fi
+      if [[ "$ARCH" == "arm64" ]]; then
+        printf '      # Your CPU is Apple Silicon (arm64) — pick the Apple Silicon build if using the .app\n'
+      else
+        printf '      # Your CPU is Intel (x86_64) — pick the Intel build if using the .app\n'
+      fi
+      ;;
+    linux)
+      cat <<CMD
+      curl -fsSL https://ollama.com/install.sh | sh
+      # Architecture detected: ${ARCH}
+CMD
+      ;;
+  esac
+}
+
+print_ollama_serve_commands() {
+  case "$OS_FAMILY" in
+    macos)
+      cat <<'CMD'
+      # If you installed the macOS app: open Ollama from Applications
+      # Or in a terminal (leave it running):
+      ollama serve
+CMD
+      ;;
+    linux)
+      cat <<'CMD'
+      ollama serve
+      # Optional background:
+      #   nohup ollama serve > /tmp/ollama.log 2>&1 &
+CMD
+      ;;
+  esac
+}
+
 print_fix_guide() {
+  local step=1
+
   cat <<HDR
 
 ────────────────────────────────────────────────────────
@@ -111,132 +272,60 @@ Follow steps below in order, then run the installer again:
 ────────────────────────────────────────────────────────
 HDR
 
-  local step=1
-
   if [[ "$HAVE_NODE" -eq 0 || "$HAVE_NPM" -eq 0 ]]; then
     printf '\n[%d] Install Node.js LTS (includes npm)\n' "$step"
+    printf '    Problem:  '
+    if [[ "$HAVE_NODE" -eq 0 && "$HAVE_NPM" -eq 0 ]]; then
+      printf 'node and npm were not found on PATH.\n'
+    elif [[ "$HAVE_NODE" -eq 0 ]]; then
+      printf 'node was not found on PATH.\n'
+    else
+      printf 'npm was not found on PATH.\n'
+    fi
+    printf '    Solution: Install Node.js LTS for %s; npm ships with it.\n' "$OS_LABEL"
+    printf '    Commands:\n'
+    print_node_commands
+    printf '    Verify:\n'
+    printf '      node -v && npm -v\n'
     step=$((step + 1))
-    case "$OS_FAMILY" in
-      macos)
-        if [[ "$HAVE_BREW" -eq 1 ]]; then
-          cat <<'CMD'
-    brew install node
-CMD
-        else
-          cat <<'CMD'
-    # Option A — Homebrew (recommended), then Node:
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    brew install node
-
-    # Option B — installer from https://nodejs.org/ (LTS .pkg for your Mac CPU)
-CMD
-          if [[ "$ARCH" == "arm64" ]]; then
-            printf '    #    choose the Apple Silicon build\n'
-          else
-            printf '    #    choose the x64 / Intel build\n'
-          fi
-        fi
-        ;;
-      linux)
-        case "$DISTRO_ID" in
-          ubuntu|debian|linuxmint|pop)
-            cat <<'CMD'
-    # NodeSource LTS (Ubuntu/Debian family):
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-CMD
-            ;;
-          fedora)
-            cat <<'CMD'
-    sudo dnf install -y nodejs npm
-CMD
-            ;;
-          arch|manjaro)
-            cat <<'CMD'
-    sudo pacman -S --needed nodejs npm
-CMD
-            ;;
-          opensuse*|sles)
-            cat <<'CMD'
-    sudo zypper install nodejs npm
-CMD
-            ;;
-          *)
-            cat <<CMD
-    # Distro: ${DISTRO_ID:-unknown} (like: ${DISTRO_LIKE:-n/a})
-    # Install Node LTS + npm via your package manager, nvm, or:
-    #   https://nodejs.org/  (Linux ${ARCH} binaries)
-    # Example with nvm:
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-    # restart shell, then:
-    nvm install --lts
-CMD
-            ;;
-        esac
-        ;;
-    esac
-    printf '    Verify:  node -v && npm -v\n'
   fi
 
   if [[ "$HAVE_OLLAMA" -eq 0 ]]; then
     printf '\n[%d] Install Ollama\n' "$step"
+    printf '    Problem:  ollama CLI was not found on PATH.\n'
+    printf '    Solution: Install Ollama for %s, then ensure `ollama` is on PATH.\n' "$OS_LABEL"
+    printf '    Commands:\n'
+    print_ollama_install_commands
+    printf '    Verify:\n'
+    printf '      command -v ollama && ollama -v\n'
     step=$((step + 1))
-    case "$OS_FAMILY" in
-      macos)
-        if [[ "$HAVE_BREW" -eq 1 ]]; then
-          cat <<'CMD'
-    brew install ollama
-CMD
-        else
-          cat <<'CMD'
-    # App from https://ollama.com/download  (macOS)
-    # or after Homebrew is installed:  brew install ollama
-CMD
-        fi
-        if [[ "$ARCH" == "arm64" ]]; then
-          printf '    # Your CPU is Apple Silicon (arm64) — use the Apple Silicon build if downloading the .app\n'
-        else
-          printf '    # Your CPU is Intel (x86_64) — use the Intel build if downloading the .app\n'
-        fi
-        ;;
-      linux)
-        cat <<'CMD'
-    curl -fsSL https://ollama.com/install.sh | sh
-CMD
-        printf '    # Architecture detected: %s\n' "$ARCH"
-        ;;
-    esac
-    printf '    Verify:  command -v ollama && ollama -v\n'
   fi
 
   if [[ "$HAVE_OLLAMA" -eq 1 && "$OLLAMA_UP" -eq 0 ]] || [[ "$HAVE_OLLAMA" -eq 0 ]]; then
-    printf '\n[%d] Start the Ollama server (leave this terminal open or run in background)\n' "$step"
+    printf '\n[%d] Start the Ollama server\n' "$step"
+    if [[ "$HAVE_OLLAMA" -eq 1 && "$OLLAMA_UP" -eq 0 ]]; then
+      printf '    Problem:  Ollama CLI is installed, but the server did not respond to `ollama list`.\n'
+    else
+      printf '    Problem:  Ollama must be running before setup can pull the model.\n'
+    fi
+    printf '    Solution: Start the Ollama daemon and keep it running while you use the app.\n'
+    printf '    Commands:\n'
+    print_ollama_serve_commands
+    printf '    Verify:\n'
+    printf '      ollama list\n'
     step=$((step + 1))
-    case "$OS_FAMILY" in
-      macos)
-        cat <<'CMD'
-    # If you installed the macOS app: open Ollama from Applications
-    # Or from a terminal:
-    ollama serve
-CMD
-        ;;
-      linux)
-        cat <<'CMD'
-    ollama serve
-    # Optional background:
-    #   nohup ollama serve > /tmp/ollama.log 2>&1 &
-CMD
-        ;;
-    esac
-    printf '    Verify:  ollama list\n'
   fi
 
   cat <<END
 
 [${step}] Re-run the installer
-
-    cd ${ROOT}
-    npm run setup
+    Problem:  Previous steps installed or started missing tools.
+    Solution: From the repo root, run setup again so it can npm install and pull the model.
+    Commands:
+      cd ${ROOT}
+      npm run setup
+    Verify:
+      # setup should print "Setup complete." and pull ${MODEL}
 
 ────────────────────────────────────────────────────────
 END
