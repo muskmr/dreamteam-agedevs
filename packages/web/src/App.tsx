@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   approveDesign,
   createProject,
@@ -22,12 +22,74 @@ interface ChatMessage {
   text: string;
 }
 
+const PIPELINE = [
+  "designer",
+  "planner",
+  "specificator",
+  "coder",
+  "reviewer",
+  "tester",
+  "reporter",
+  "compliancer",
+] as const;
+
+const NAV: { id: View; label: string; icon: string; needsProject?: boolean }[] = [
+  { id: "projects", label: "Projects", icon: "P" },
+  { id: "chat", label: "Agent", icon: "A", needsProject: true },
+  { id: "artifacts", label: "Artifacts", icon: "F", needsProject: true },
+  { id: "trace", label: "Trace", icon: "T", needsProject: true },
+];
+
+function pipelineProgress(trace: TraceEvent[], loading: boolean): {
+  done: Set<string>;
+  current: string | null;
+  gate: string;
+} {
+  const done = new Set<string>();
+  for (const e of trace) {
+    if (e.event === "agent_completed" || e.event === "user_approved") {
+      done.add(e.actor === "user" ? "designer" : e.actor);
+    }
+  }
+  if (done.has("user")) done.add("designer");
+
+  let current: string | null = null;
+  for (const agent of PIPELINE) {
+    if (!done.has(agent)) {
+      current = agent;
+      break;
+    }
+  }
+
+  let gate = "idle";
+  if (loading) gate = "agent_running";
+  else if (done.has("designer") && !done.has("planner") && current === "planner") {
+    // designer completed but planner not started → usually waiting_user before approve,
+    // or post-approve in flight; prefer waiting_user if last designer status was waiting
+    const lastDesigner = [...trace].reverse().find((e) => e.actor === "designer");
+    if (lastDesigner?.event === "agent_completed") gate = "waiting_user";
+  } else if (current && done.has("designer")) {
+    gate = current;
+  } else if (!done.has("designer") && trace.some((e) => e.actor === "designer")) {
+    gate = "waiting_user";
+  }
+
+  // Refine: if designer completed and no planner yet and not loading → waiting_user
+  if (!loading && done.has("designer") && !trace.some((e) => e.actor === "planner" && e.event === "agent_started")) {
+    const approved = trace.some((e) => e.event === "user_approved");
+    gate = approved ? (current ?? "running") : "waiting_user";
+  }
+
+  return { done, current, gate };
+}
+
 export default function App() {
   const [view, setView] = useState<View>("projects");
   const [projects, setProjects] = useState<string[]>([]);
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [meta, setMeta] = useState<ProjectMeta | null>(null);
   const [ollamaOk, setOllamaOk] = useState(false);
+  const [ollamaModel, setOllamaModel] = useState("llama3.2");
   const [newName, setNewName] = useState("ProjectX");
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -40,6 +102,7 @@ export default function App() {
   const refresh = useCallback(async () => {
     const health = await getHealth();
     setOllamaOk(health.ollama);
+    if (health.model) setOllamaModel(health.model);
     const list = await listProjects();
     setProjects(list);
     if (activeProject) {
@@ -56,11 +119,17 @@ export default function App() {
     refresh();
   }, [refresh]);
 
+  const progress = useMemo(
+    () => pipelineProgress(trace, loading),
+    [trace, loading],
+  );
+
   async function handleCreateProject() {
     if (!newName.trim()) return;
     const m = await createProject(newName.trim());
     setActiveProject(m.name);
     setMeta(m);
+    setMessages([]);
     await refresh();
     setView("chat");
   }
@@ -177,128 +246,305 @@ export default function App() {
     setArtifactContent(content);
   }
 
+  const releaseLabel = meta ? `v.${meta.currentRelease}` : null;
+  const bundleLabel = meta
+    ? `v.${meta.currentRelease}.${meta.currentBundle}`
+    : null;
+  const tryLabel = meta
+    ? `v.${meta.currentRelease}.${meta.currentBundle}.${meta.currentTry}`
+    : null;
+
   return (
     <div className="app">
-      <aside className="sidebar">
-        <h1>AI SDLC DREAMTEAM</h1>
-        <p className={ollamaOk ? "status-ok" : "status-err"}>
-          Ollama: {ollamaOk ? "connected" : "offline"}
-        </p>
-        {meta && (
-          <p style={{ fontSize: "0.8rem", color: "#9ca3b8" }}>
-            {meta.name} / v.{meta.currentRelease} / v.{meta.currentRelease}.{meta.currentBundle} / v.{meta.currentRelease}.{meta.currentBundle}.{meta.currentTry}
-          </p>
-        )}
-        <nav>
-          <button onClick={() => setView("projects")}>Projects</button>
-          <button onClick={() => setView("chat")} disabled={!activeProject}>
-            Chat
-          </button>
-          <button onClick={() => setView("artifacts")} disabled={!activeProject}>
-            Artifacts
-          </button>
-          <button onClick={() => setView("trace")} disabled={!activeProject}>
-            Trace
-          </button>
+      <aside className="rail">
+        <div className="rail-logo" title="DREAMTEAM">
+          DT
+        </div>
+        <nav className="rail-nav">
+          {NAV.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`rail-btn${view === item.id ? " active" : ""}`}
+              disabled={item.needsProject && !activeProject}
+              onClick={() => setView(item.id)}
+              title={item.label}
+            >
+              <span className="rail-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
         </nav>
+        <div
+          className={`rail-footer${ollamaOk ? " ok" : ""}`}
+          title={ollamaOk ? "Ollama connected" : "Ollama offline"}
+        >
+          <span className="dot" />
+        </div>
       </aside>
+
+      <header className="topbar">
+        <div className="topbar-brand">DREAMTEAM</div>
+        <div className="topbar-center">
+          {activeProject ? (
+            <>
+              Agent · <strong>{activeProject}</strong>
+            </>
+          ) : (
+            "Select or create a project"
+          )}
+        </div>
+        <div className={`topbar-status${ollamaOk ? " ok" : ""}`}>
+          <span className="dot" />
+          {ollamaOk ? "Ollama connected" : "Ollama offline"}
+        </div>
+      </header>
 
       <main className="main">
         {view === "projects" && (
-          <div className="panel">
-            <h2>Projects</h2>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Project name"
-              />
-              <button onClick={handleCreateProject}>Create</button>
+          <div className="panel-view">
+            <div className="panel">
+              <h2>Projects</h2>
+              <div className="row">
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Project name"
+                />
+                <button type="button" className="btn-primary" onClick={handleCreateProject}>
+                  Create
+                </button>
+              </div>
+              <ul className="artifact-list">
+                {projects.map((p) => (
+                  <li
+                    key={p}
+                    className={activeProject === p ? "active" : undefined}
+                    onClick={() => {
+                      setActiveProject(p);
+                      setMessages([]);
+                      setView("chat");
+                    }}
+                  >
+                    {p}
+                    {activeProject === p ? " · active" : ""}
+                  </li>
+                ))}
+                {projects.length === 0 && (
+                  <li style={{ cursor: "default", color: "var(--text-dim)" }}>
+                    No projects yet
+                  </li>
+                )}
+              </ul>
             </div>
-            <ul className="artifact-list">
-              {projects.map((p) => (
-                <li
-                  key={p}
-                  onClick={() => {
-                    setActiveProject(p);
-                    setView("chat");
-                  }}
-                >
-                  {p} {activeProject === p ? "(active)" : ""}
-                </li>
-              ))}
-            </ul>
           </div>
         )}
 
         {view === "chat" && activeProject && (
-          <div className="panel">
-            <h2>Chat — {activeProject}</h2>
+          <div className="agent-surface">
             <div className="chat-log">
+              {messages.length === 0 && (
+                <p className="chat-empty">
+                  Describe what to build. Designer will draft a high-level design, then you can
+                  Approve, Retry, or Restart.
+                </p>
+              )}
               {messages.map((m, i) => (
                 <div key={i} className={`chat-msg ${m.role}`}>
-                  <strong>{m.role}:</strong> {m.text}
+                  <span className="msg-meta">{m.role === "user" ? "You" : "Agent"}</span>
+                  {m.text}
                 </div>
               ))}
             </div>
-            <textarea
-              rows={3}
-              style={{ width: "100%", marginBottom: "0.5rem" }}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe what to build… (also used for Restart design)"
-              disabled={loading}
-            />
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <button onClick={handleSendPrompt} disabled={loading}>
-                Send prompt
-              </button>
-              <button onClick={handleApprove} disabled={loading}>
-                Approve design
-              </button>
-              <button onClick={handleRetryDesign} disabled={loading}>
-                Retry design
-              </button>
-              <button onClick={handleRestartDesign} disabled={loading}>
-                Restart design
-              </button>
+            <div className="composer">
+              <textarea
+                rows={3}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe what to build… (also used for Restart design)"
+                disabled={loading}
+              />
+              <div className="composer-toolbar">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleSendPrompt}
+                  disabled={loading}
+                >
+                  Send
+                </button>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={handleApprove}
+                  disabled={loading}
+                >
+                  Approve design
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleRetryDesign}
+                  disabled={loading}
+                >
+                  Retry design
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleRestartDesign}
+                  disabled={loading}
+                >
+                  Restart design
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {view === "artifacts" && activeProject && (
-          <div className="grid-2">
-            <div className="panel">
-              <h2>Artifacts</h2>
-              <ul className="artifact-list">
-                {artifacts.map((a) => (
-                  <li key={a} onClick={() => handleSelectArtifact(a)}>
-                    {a}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="panel">
-              <h2>{selectedArtifact ?? "Select an artifact"}</h2>
-              <pre className="artifact-content">{artifactContent}</pre>
+          <div className="panel-view">
+            <div className="grid-2">
+              <div className="panel">
+                <h2>Artifacts</h2>
+                <ul className="artifact-list">
+                  {artifacts.map((a) => (
+                    <li
+                      key={a}
+                      className={selectedArtifact === a ? "active" : undefined}
+                      onClick={() => handleSelectArtifact(a)}
+                    >
+                      {a}
+                    </li>
+                  ))}
+                  {artifacts.length === 0 && (
+                    <li style={{ cursor: "default", color: "var(--text-dim)" }}>
+                      No artifacts in current attempt
+                    </li>
+                  )}
+                </ul>
+              </div>
+              <div className="panel">
+                <h2>{selectedArtifact ?? "Select an artifact"}</h2>
+                <pre className="artifact-content">{artifactContent}</pre>
+              </div>
             </div>
           </div>
         )}
 
         {view === "trace" && activeProject && (
-          <div className="panel">
-            <h2>Trace — {activeProject}</h2>
-            {trace.map((e, i) => (
-              <div key={i} className="trace-event">
-                <span className="status-ok">{e.ts}</span>{" "}
-                <strong>{e.actor}</strong> — {e.event}
-                {e.path && <span> → {e.path}</span>}
-              </div>
-            ))}
-            {trace.length === 0 && <p>No trace events yet.</p>}
+          <div className="panel-view">
+            <div className="panel">
+              <h2>Trace — {activeProject}</h2>
+              {trace.map((e, i) => (
+                <div key={i} className="trace-event">
+                  <span className="status-ok">{e.ts}</span>{" "}
+                  <strong>{e.actor}</strong> — {e.event}
+                  {e.path && <span> → {e.path}</span>}
+                </div>
+              ))}
+              {trace.length === 0 && <p className="status-err" style={{ color: "var(--text-dim)" }}>No trace events yet.</p>}
+            </div>
           </div>
         )}
       </main>
+
+      <aside className="context">
+        {!activeProject || !meta ? (
+          <p className="context-empty">
+            Open a project to see version chips, pipeline progress, and latest artifacts.
+          </p>
+        ) : (
+          <>
+            <div className="context-section">
+              <h3>Project</h3>
+              <p className="context-project-name">{meta.name}</p>
+              <p className="context-path">projects/{meta.name}</p>
+            </div>
+
+            <div className="context-section">
+              <h3>Versions</h3>
+              <div className="version-chips">
+                <span className="chip">{releaseLabel}</span>
+                <span className="chip">{bundleLabel}</span>
+                <span className="chip active">{tryLabel}</span>
+              </div>
+            </div>
+
+            <div className="context-section">
+              <h3>Pipeline</h3>
+              <div className="pipeline">
+                {PIPELINE.map((agent) => {
+                  const isDone = progress.done.has(agent);
+                  const isCurrent = progress.current === agent;
+                  return (
+                    <div
+                      key={agent}
+                      className={`pipeline-step${isDone ? " done" : ""}${isCurrent ? " current" : ""}`}
+                    >
+                      <span className="step-mark" />
+                      {agent}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="context-section">
+              <h3>Current gate</h3>
+              <p
+                className={`gate-label${
+                  progress.gate === "waiting_user"
+                    ? ""
+                    : progress.gate === "agent_running"
+                      ? " running"
+                      : " idle"
+                }`}
+              >
+                {progress.gate}
+              </p>
+            </div>
+
+            <div className="context-section">
+              <h3>Context</h3>
+              <ul className="context-meta-list">
+                <li>
+                  <span>model</span>
+                  <span>{ollamaModel}</span>
+                </li>
+                <li>
+                  <span>provider</span>
+                  <span>ollama</span>
+                </li>
+                <li>
+                  <span>status</span>
+                  <span>{ollamaOk ? "online" : "offline"}</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="context-section">
+              <h3>Artifacts (latest)</h3>
+              <ul className="artifact-list">
+                {artifacts.slice(0, 8).map((a) => (
+                  <li
+                    key={a}
+                    onClick={() => {
+                      setView("artifacts");
+                      void handleSelectArtifact(a);
+                    }}
+                  >
+                    {a.split("/").pop()}
+                  </li>
+                ))}
+                {artifacts.length === 0 && (
+                  <li style={{ cursor: "default", color: "var(--text-dim)" }}>—</li>
+                )}
+              </ul>
+            </div>
+          </>
+        )}
+      </aside>
     </div>
   );
 }
