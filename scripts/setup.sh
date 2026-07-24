@@ -111,6 +111,8 @@ Follow steps below in order, then run the installer again:
 ────────────────────────────────────────────────────────
 HDR
 
+  local step=1
+
   if [[ "$HAVE_NODE" -eq 0 || "$HAVE_NPM" -eq 0 ]]; then
     printf '\n[%d] Install Node.js LTS (includes npm)\n' "$step"
     step=$((step + 1))
