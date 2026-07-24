@@ -18,6 +18,12 @@ SDLC tool. It is an npm-workspaces monorepo:
 
 ### Running the app (dev)
 
+For a normal local machine (macOS / Linux), prefer the turnkey path in
+[README.md](README.md): `npm run setup`, then `source env/aliases.sh` and
+`npm run dev`. Windows is not supported.
+
+In this Cloud VM specifically:
+
 - Load URL aliases once per shell: `source env/aliases.sh`
   (exports `$API_URL`, `$WEB_URL`, `$OLLAMA_URL`, plus `API_PORT` / `WEB_PORT` / `OLLAMA_PORT`).
 - Start both servers from the repo root: `npm run dev`

@@ -1,19 +1,65 @@
 # AI SDLC DREAMTEAM
 
-Spec-first, multi-agent training course for developers. Local React web app + Node API + Ollama.
+Spec-first multi-agent demo: local React web app + Node API + **local Ollama**.
 
-## Quick start
+## Supported platforms
+
+| OS | Support |
+|----|---------|
+| **macOS** (Apple Silicon / Intel) | Supported |
+| **Linux** (x86_64 / arm64, bash) | Supported |
+| **Windows** (native) | **Not supported** |
+
+No Docker. LLM runs locally via Ollama (default model `llama3.2`).
+
+## Requirements
+
+- **Node.js LTS** + npm — https://nodejs.org/
+- **Ollama** — https://ollama.com/
+- Git
+
+> `main` is intentionally empty. Clone and check out the product branch (e.g. the branch that contains this README / app packages).
+
+## Install (local Ollama)
 
 ```bash
-npm install
-ollama pull llama3.2
+git clone <this-repo-url>
+cd shiny-robo
+git checkout <product-branch>
+
+npm run setup
+```
+
+`npm run setup` runs [`scripts/setup.sh`](scripts/setup.sh): installs npm deps, checks Ollama, pulls `$OLLAMA_MODEL` (default `llama3.2`).
+
+If Ollama is not installed, install it from https://ollama.com and re-run setup.  
+If the daemon is down: start `ollama serve` in another terminal, then re-run setup.
+
+## Run
+
+```bash
 source env/aliases.sh   # sets $API_URL, $WEB_URL, $OLLAMA_URL
+# ollama serve          # if not already running
 npm run dev
 ```
 
-- **Web UI:** `$WEB_URL`
-- **API:** `$API_URL`
-- **Ollama:** `$OLLAMA_URL` (override with env before `source`, or export after)
+- **Web UI:** open `$WEB_URL`
+- **API health:** `curl "$API_URL/api/health"` → want `"ollama": true`
+
+Override ports/host before `source`, or export `API_URL` / `OLLAMA_URL` / `OLLAMA_MODEL` afterward. See [`env/aliases.sh`](env/aliases.sh).
+
+## Usage
+
+1. **Projects** — create or select a project  
+2. **Agent** — **Send** a prompt → Designer drafts a design (`waiting_user`)  
+3. Then either:
+   - **Approve design** — runs Planner → … → Compliancer  
+   - **Retry design** — new attempt in the same iteration  
+   - **Restart design** — new iteration (put an updated prompt in the box first)
+
+Artifacts land under `projects/<name>/…` on disk (no database).
+
+**Note:** On CPU, a single Designer call can take minutes; Approve runs several agents in sequence. Do not re-click Send / Approve / Retry / Restart while a run is in flight.
 
 ## Documentation
 
@@ -36,7 +82,7 @@ projects/{ProjectName}/v.{R}/
 
 **Retry design** keeps the iteration and adds an attempt. **Restart design** opens a new iteration with an updated prompt. Details: [ORCHESTRATOR.md](spec/ORCHESTRATOR.md).
 
-## AI SDLC DREAMTEAM
+## Pipeline
 
 Designer → Planner → Specificator → Coder → Reviewer → Tester → Reporter → Compliancer
 
