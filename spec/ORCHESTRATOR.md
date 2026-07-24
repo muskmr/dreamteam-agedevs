@@ -1,6 +1,6 @@
 # Orchestrator State Machine
 
-Target model for AI SDLC DREAMTEAM. Path layout details live in [PATHS.md](PATHS.md).
+Runtime model for AI SDLC DREAMTEAM (API + Chat UI). Path layout details live in [PATHS.md](PATHS.md).
 
 ## Pipeline
 
@@ -20,9 +20,9 @@ Only **Designer** is human-in-the-loop. After the user approves a design attempt
 | **Restart design** | Bundle `B+1`, try `.1` | new iteration folder | New idea; user supplements or rewrites the prompt |
 | **Approve design** | — | writes `approval` in that try | Unlocks Planner and the rest of the pipeline |
 
-## Design loop (target)
+## Design loop
 
-A user prompt opens the first **design iteration** folder. Inside it, each Designer run creates a **design attempt** folder with a Markdown draft. **Retry design** keeps the iteration folder and adds a new attempt. When the direction is wrong, **Restart design** (with an updated prompt) creates a new iteration folder and starts attempts from `.1` again.
+A user prompt opens the first **design iteration** folder. Inside it, each Designer run creates a **design attempt** folder with a Markdown draft. **Retry design** keeps the iteration folder and adds a new attempt (reuses the prior prompt). When the direction is wrong, **Restart design** (requires an updated/supplemented prompt in Chat) creates a new iteration folder and starts attempts from `.1` again. Sending a prompt again on an attempt that already has a draft is rejected — use Retry or Restart instead.
 
 ```
 User prompt

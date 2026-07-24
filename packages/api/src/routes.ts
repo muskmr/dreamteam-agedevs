@@ -1,11 +1,17 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import cors from "cors";
 import { checkOllama } from "./ollama.js";
-import { REPO_ROOT, stageTryDir } from "./paths.js";
-import { approveAndContinue, startTry, retryTry, newBundle } from "./orchestrator.js";
+import { REPO_ROOT } from "./paths.js";
+import {
+  approveAndContinue,
+  OrchestratorError,
+  restartDesign,
+  retryDesign,
+  startTry,
+} from "./orchestrator.js";
 import { readTrace } from "./trace.js";
+import { ollamaModel, ollamaUrl } from "./urls.js";
 import {
   createProject,
   getProjectMeta,
@@ -13,13 +19,21 @@ import {
   listTryArtifacts,
   makeContext,
   readFile,
-  saveProjectMeta,
 } from "./workspace.js";
 
 const OLLAMA = {
-  baseUrl: process.env.OLLAMA_URL ?? "http://localhost:11434",
-  model: process.env.OLLAMA_MODEL ?? "llama3.2",
+  baseUrl: ollamaUrl(),
+  model: ollamaModel(),
 };
+
+function sendOrchestratorError(res: express.Response, err: unknown): boolean {
+  if (err instanceof OrchestratorError) {
+    const status = err.code === "conflict" ? 409 : err.code === "not_found" ? 404 : 400;
+    res.status(status).json({ error: err.message });
+    return true;
+  }
+  return false;
+}
 
 export function createApp() {
   const app = express();
@@ -66,8 +80,13 @@ export function createApp() {
       res.status(404).json({ error: "Project not found" });
       return;
     }
-    const { ctx, result } = await startTry(meta, prompt.trim(), OLLAMA);
-    res.json({ ctx, result });
+    try {
+      const { ctx, result } = await startTry(meta, prompt.trim(), OLLAMA);
+      res.json({ ctx, result });
+    } catch (err) {
+      if (sendOrchestratorError(res, err)) return;
+      throw err;
+    }
   });
 
   app.post("/api/projects/:name/approve", async (req, res) => {
@@ -82,24 +101,52 @@ export function createApp() {
     res.json({ ctx, results });
   });
 
+  /** Retry design — same iteration, new attempt; reuses prior prompt (optional note). */
   app.post("/api/projects/:name/retry", async (req, res) => {
+    const { note } = req.body as { note?: string };
     const meta = await getProjectMeta(req.params.name);
     if (!meta) {
       res.status(404).json({ error: "Project not found" });
       return;
     }
-    const ctx = await retryTry(meta);
-    res.json({ ctx, message: `Retry design attempt ${ctx.tryVersion} created` });
+    try {
+      const { ctx, result } = await retryDesign(meta, OLLAMA, note);
+      res.json({
+        ctx,
+        result,
+        message: `Retry design attempt ${ctx.tryVersion} created`,
+      });
+    } catch (err) {
+      if (sendOrchestratorError(res, err)) return;
+      throw err;
+    }
   });
 
+  /** Restart design — new iteration; requires updated/supplemented prompt. */
   app.post("/api/projects/:name/new-bundle", async (req, res) => {
+    const { prompt } = req.body as { prompt?: string };
+    if (!prompt?.trim()) {
+      res.status(400).json({
+        error: "Restart design requires an updated or supplemented prompt",
+      });
+      return;
+    }
     const meta = await getProjectMeta(req.params.name);
     if (!meta) {
       res.status(404).json({ error: "Project not found" });
       return;
     }
-    const ctx = await newBundle(meta);
-    res.json({ ctx, message: `Restart design iteration ${ctx.bundleVersion} created` });
+    try {
+      const { ctx, result } = await restartDesign(meta, prompt.trim(), OLLAMA);
+      res.json({
+        ctx,
+        result,
+        message: `Restart design iteration ${ctx.bundleVersion} created`,
+      });
+    } catch (err) {
+      if (sendOrchestratorError(res, err)) return;
+      throw err;
+    }
   });
 
   app.get("/api/projects/:name/artifacts", async (req, res) => {

@@ -7,11 +7,13 @@ Spec-first, multi-agent training course for developers. Local React web app + No
 ```bash
 npm install
 ollama pull llama3.2
+source env/aliases.sh   # sets $API_URL, $WEB_URL, $OLLAMA_URL
 npm run dev
 ```
 
-- **Web UI:** http://localhost:5173
-- **API:** http://localhost:3001
+- **Web UI:** `$WEB_URL`
+- **API:** `$API_URL`
+- **Ollama:** `$OLLAMA_URL` (override with env before `source`, or export after)
 
 ## Documentation
 

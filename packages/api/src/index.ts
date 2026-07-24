@@ -1,8 +1,9 @@
 import { createApp } from "./routes.js";
+import { apiListenPort, apiUrl } from "./urls.js";
 
-const PORT = Number(process.env.PORT ?? 3001);
+const PORT = apiListenPort();
 const app = createApp();
 
 app.listen(PORT, () => {
-  console.log(`AI SDLC DREAMTEAM API running on http://localhost:${PORT}`);
+  console.log(`AI SDLC DREAMTEAM API listening (PORT=${PORT}, API_URL=${apiUrl()})`);
 });

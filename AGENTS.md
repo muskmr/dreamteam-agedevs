@@ -18,20 +18,21 @@ SDLC tool. It is an npm-workspaces monorepo:
 
 ### Running the app (dev)
 
+- Load URL aliases once per shell: `source env/aliases.sh`
+  (exports `$API_URL`, `$WEB_URL`, `$OLLAMA_URL`, plus `API_PORT` / `WEB_PORT` / `OLLAMA_PORT`).
 - Start both servers from the repo root: `npm run dev`
-  (uses `concurrently` → API on **http://localhost:3001** via `tsx watch`, web on
-  **http://localhost:5173** via Vite). See root `package.json` scripts.
-- Health check: `curl http://localhost:3001/api/health` → `{"ollama":true,...}`
-  once Ollama is up.
+  (uses `concurrently` → API via `tsx watch`, web via Vite; ports come from the aliases).
+- Health check: `curl "$API_URL/api/health"` → `{"ollama":true,...}` once Ollama is up.
 - Core flow: create a project → send a prompt (Designer agent runs and waits for
   user approval) → `approve` runs the rest of the pipeline. The web UI exposes all
   of this (Projects → Chat → Artifacts → Trace).
 
 ### Ollama (LLM) — required for agent prompts, and the main gotcha
 
-The API needs Ollama serving `llama3.2` at `http://localhost:11434`
-(override with `OLLAMA_URL` / `OLLAMA_MODEL`). The app still boots without it, but
-any prompt/agent call fails; `/api/health` reports `"ollama": false`.
+The API needs Ollama serving `llama3.2` at `$OLLAMA_URL`
+(override with `OLLAMA_URL` / `OLLAMA_MODEL`, or `OLLAMA_PORT` before sourcing aliases).
+The app still boots without it, but any prompt/agent call fails; `/api/health`
+reports `"ollama": false`.
 
 - **Ollama is NOT managed by systemd here.** Start it manually each session:
   `nohup ollama serve > /tmp/ollama.log 2>&1 &`  (the `llama3.2` model is already
