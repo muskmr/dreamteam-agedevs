@@ -12,7 +12,7 @@ Use GitHub’s private reporting flow:
 
 1. Open the repository on GitHub
 2. **Security** → **Advisories** → **Report a vulnerability**
-   (or: `https://github.com/muskmr/shiny-robo/security/advisories/new`)
+   (or: `https://github.com/muskmr/dreamteam-agedevs/security/advisories/new`)
 
 Include steps to reproduce, impact, and any suggested fix if you have one.
 

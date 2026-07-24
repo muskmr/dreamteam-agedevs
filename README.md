@@ -2,7 +2,7 @@
 
 Spec-first multi-agent demo: React web + Node API + **local Ollama on the host**.
 
-**Canonical branch:** [`main`](https://github.com/muskmr/shiny-robo/tree/main).  
+**Canonical branch:** [`main`](https://github.com/muskmr/dreamteam-agedevs/tree/main).  
 New work: branch from `main` as `feature/<topic>`, `fix/<topic>`, or `docs/<topic>`, then open a PR into `main`.
 
 **License:** [MIT](LICENSE). Security reports: see [SECURITY.md](SECURITY.md).  
