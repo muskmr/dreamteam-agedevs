@@ -18,6 +18,14 @@ SDLC tool. It is an npm-workspaces monorepo:
 
 ### Running the app (dev)
 
+**Recommended (Podman, option C):** `npm run podman:up` — see [README.md](README.md) and
+[docs/DEPLOY-PODMAN.md](docs/DEPLOY-PODMAN.md). App in one container; Ollama on the host.
+
+**Bare-metal Node** (macOS / Linux): `source env/aliases.sh` then `npm run dev`.
+Windows is not supported.
+
+In this Cloud VM specifically:
+
 - Load URL aliases once per shell: `source env/aliases.sh`
   (exports `$API_URL`, `$WEB_URL`, `$OLLAMA_URL`, plus `API_PORT` / `WEB_PORT` / `OLLAMA_PORT`).
 - Start both servers from the repo root: `npm run dev`
@@ -65,6 +73,8 @@ reports `"ollama": false`.
 
 - Typecheck+build API: `npm run build -w packages/api` (runs `tsc`).
 - Typecheck+build web: `npm run build -w packages/web` (`tsc -b && vite build`).
+- Gate A (this Cloud VM): `npm run verify:a` — Linux x86_64 only (build + API + Vite smoke).
+- Gate B (GitHub Actions): build on Ubuntu; smoke matrix on **ubuntu-latest** and **macos-14** (Apple Silicon), mock Ollama — see `.github/workflows/ci.yml`.
 - There is **no automated test suite and no linter configured** in this repo.
 
 ### Misc

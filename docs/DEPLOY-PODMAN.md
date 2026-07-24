@@ -1,22 +1,6 @@
-# AI SDLC DREAMTEAM
+# Deploy: Podman single container + host Ollama
 
-Spec-first multi-agent demo: React web + Node API + **local Ollama on the host**.
-
-## Supported platforms
-
-| OS | Support |
-|----|---------|
-| **macOS** (Apple Silicon / Intel) | Supported |
-| **Linux** (x86_64 / arm64) | Supported |
-| **Windows** (native) | **Not supported** |
-
-### CI smoke (GitHub Actions)
-
-On every push/PR, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs build on **Ubuntu** and smoke (mock Ollama) on **Ubuntu + macOS 14 Apple Silicon** (`macos-14`). Local gate A (`npm run verify:a`) is Cloud/Linux only.
-
-## Recommended: Podman single container (option C)
-
-App (API + web) runs in **one Podman container**. Ollama and the model stay on **bare metal**.
+Option **C**: one image / one container for API+web. Ollama stays on the host.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -44,48 +28,22 @@ App (API + web) runs in **one Podman container**. Ollama and the model stay on *
 └──────────────────────────────┼──────────────────────────────┘
                                ▼
                          Browser → http://127.0.0.1:5173
-                         (UI shows Ollama connected / disconnected)
 ```
 
-### Start (Podman)
+## Flow
+
+1. `npm run podman:up` → platform + Podman audit  
+2. If Podman missing → Problem/Solution/Commands → re-run  
+3. `podman build -t localhost/dreamteam-app:latest -f Containerfile .`  
+4. `podman run` with `OLLAMA_URL=http://host.containers.internal:11434`, `projects/` volume, published ports  
+5. Script prints Web URL  
+6. Host Ollama optional at start; UI shows **Ollama disconnected** with install hints until `ollama serve` + model pull  
+
+## Commands
 
 ```bash
-git clone <this-repo-url>
-cd shiny-robo
-git checkout <product-branch>
-
 npm run podman:up
+npm run podman:down
 ```
 
-The script detects OS/arch, audits **Podman**, prints install commands if missing, otherwise builds the image from [`Containerfile`](Containerfile), runs the container, and prints the Web URL.
-
-- No Docker Compose required (single `podman build` + `podman run`).
-- Stop: `npm run podman:down`
-- If the UI shows **Ollama disconnected**, open the status chip for host-side install/`ollama serve`/`ollama pull` hints.
-
-Same diagram: [`docs/DEPLOY-PODMAN.md`](docs/DEPLOY-PODMAN.md).
-
-## Alternative: bare-metal Node (no Podman)
-
-```bash
-npm install
-source env/aliases.sh
-# ollama serve && ollama pull llama3.2
-npm run dev
-```
-
-Uses `$WEB_URL` / `$API_URL` from [`env/aliases.sh`](env/aliases.sh).
-
-## Usage
-
-1. **Projects** — create/select a project  
-2. **Agent** — **Send** → Designer → **Approve design** / **Retry design** / **Restart design**  
-
-Artifacts: `projects/<name>/…` (no database).
-
-## Documentation
-
-- [Deploy (Podman option C)](docs/DEPLOY-PODMAN.md)
-- [Path specification](spec/PATHS.md)
-- [Orchestrator](spec/ORCHESTRATOR.md)
-- [Templates](spec/TEMPLATES/)
+Env overrides: `WEB_PORT`, `API_PORT`, `OLLAMA_PORT`, `OLLAMA_MODEL`, `DREAMTEAM_IMAGE`, `DREAMTEAM_CONTAINER`.
