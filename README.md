@@ -55,7 +55,7 @@ App (API + web) runs in **one Podman container**. Ollama and the model stay on *
 ```bash
 git clone <this-repo-url>
 cd shiny-robo
-git checkout <product-branch>
+git checkout main
 
 npm run podman:up
 ```
