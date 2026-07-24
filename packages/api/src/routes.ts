@@ -89,7 +89,7 @@ export function createApp() {
       return;
     }
     const ctx = await retryTry(meta);
-    res.json({ ctx, message: `Retry try ${ctx.tryVersion} created` });
+    res.json({ ctx, message: `Retry design attempt ${ctx.tryVersion} created` });
   });
 
   app.post("/api/projects/:name/new-bundle", async (req, res) => {
@@ -99,7 +99,7 @@ export function createApp() {
       return;
     }
     const ctx = await newBundle(meta);
-    res.json({ ctx, message: `New bundle ${ctx.bundleVersion} created` });
+    res.json({ ctx, message: `Restart design iteration ${ctx.bundleVersion} created` });
   });
 
   app.get("/api/projects/:name/artifacts", async (req, res) => {

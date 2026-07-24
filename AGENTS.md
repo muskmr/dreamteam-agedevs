@@ -51,7 +51,7 @@ any prompt/agent call fails; `/api/health` reports `"ollama": false`.
   - The web UI has **no progress indicator** — during these calls the buttons just
     disable, so it looks frozen/"not working" but it is not. **Wait for it to
     finish** (the `/api/.../approve` request is a single long HTTP call).
-  - **Do NOT re-click** Send/Approve or hit **New bundle / Retry** while a run is in
+  - **Do NOT re-click** Send/Approve or hit **Restart design / Retry design** while a run is in
     flight. Those mutate the project's `currentBundle`/`currentTry` in `meta.json`,
     which desyncs the in-flight run and leaves half-written `contracts/` `specs/`
     `code/` dirs (this is what "not working" usually turns out to be).
