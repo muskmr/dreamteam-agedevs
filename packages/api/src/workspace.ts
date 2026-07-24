@@ -132,13 +132,6 @@ export function makeContext(
 }
 
 export async function scaffoldTry(ctx: TryContext, prompt: string): Promise<void> {
-  const vars = {
-    project: ctx.project,
-    bundle: ctx.bundleVersion,
-    try: ctx.tryVersion,
-    actor: "",
-  };
-
   for (const stage of STAGES) {
     await ensureDir(stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, stage));
   }
@@ -155,23 +148,33 @@ export async function scaffoldTry(ctx: TryContext, prompt: string): Promise<void
     currentAgent: "designer",
   });
 
-  const designDir = stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, "designs");
-  await writeFile(
-    path.join(designDir, "design.md"),
-    await loadTemplate("design.md", vars),
-  );
-  await writeJson(path.join(designDir, "approval.json"), {
-    artifact: "design.md",
-    bundle: ctx.bundleVersion,
-    try: ctx.tryVersion,
-    status: "pending",
-    approvedBy: null,
-    approvedAt: null,
-    summary: null,
-  });
+  // design.md is written only by Designer; approval.json only on Approve design
+  await ensureDir(stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, "designs"));
 
   const traceDir = stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, "trace");
   await writeFile(path.join(traceDir, "events.jsonl"), "");
+}
+
+/** True if this attempt already has a user prompt (attempt folder is in use). */
+export async function attemptHasPrompt(ctx: TryContext): Promise<boolean> {
+  const prompt = await readFile(
+    path.join(stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, "prompts"), "prompt.md"),
+  );
+  return prompt !== null;
+}
+
+/** True if Designer has written a draft for this attempt. */
+export async function hasDesignDraft(ctx: TryContext): Promise<boolean> {
+  const design = await readFile(
+    path.join(stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, "designs"), "design.md"),
+  );
+  return design !== null;
+}
+
+export async function readAttemptPrompt(ctx: TryContext): Promise<string | null> {
+  return readFile(
+    path.join(stageTryDir(ctx.project, ctx.release, ctx.bundle, ctx.try, "prompts"), "prompt.md"),
+  );
 }
 
 export async function writeAgentArtifact(

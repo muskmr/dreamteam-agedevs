@@ -8,8 +8,8 @@ import {
   getTrace,
   listArtifacts,
   listProjects,
-  newBundle,
-  retryTry,
+  restartDesign,
+  retryDesign,
   sendPrompt,
   type ProjectMeta,
   type TraceEvent,
@@ -77,6 +77,11 @@ export default function App() {
       ]);
       setPrompt("");
       await refresh();
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", text: err instanceof Error ? err.message : "Send prompt failed" },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -97,6 +102,69 @@ export default function App() {
         ...msgs.map((text: string) => ({ role: "system" as const, text })),
       ]);
       await refresh();
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", text: err instanceof Error ? err.message : "Approve failed" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRetryDesign() {
+    if (!activeProject) return;
+    setLoading(true);
+    setMessages((prev) => [
+      ...prev,
+      { role: "system", text: "Retry design: new attempt in the same iteration..." },
+    ]);
+    try {
+      const data = await retryDesign(activeProject);
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", text: data.result?.message ?? data.message },
+      ]);
+      await refresh();
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", text: err instanceof Error ? err.message : "Retry design failed" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRestartDesign() {
+    if (!activeProject || !prompt.trim()) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "system",
+          text: "Restart design needs an updated or supplemented prompt in the box above.",
+        },
+      ]);
+      return;
+    }
+    setLoading(true);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: `[Restart design] ${prompt}` },
+    ]);
+    try {
+      const data = await restartDesign(activeProject, prompt);
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", text: data.result?.message ?? data.message },
+      ]);
+      setPrompt("");
+      await refresh();
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", text: err instanceof Error ? err.message : "Restart design failed" },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -178,29 +246,20 @@ export default function App() {
               style={{ width: "100%", marginBottom: "0.5rem" }}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe what to build..."
+              placeholder="Describe what to build… (also used for Restart design)"
+              disabled={loading}
             />
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <button onClick={handleSendPrompt} disabled={loading}>
                 Send prompt
               </button>
               <button onClick={handleApprove} disabled={loading}>
                 Approve design
               </button>
-              <button
-                onClick={async () => {
-                  await retryTry(activeProject);
-                  await refresh();
-                }}
-              >
+              <button onClick={handleRetryDesign} disabled={loading}>
                 Retry design
               </button>
-              <button
-                onClick={async () => {
-                  await newBundle(activeProject);
-                  await refresh();
-                }}
-              >
+              <button onClick={handleRestartDesign} disabled={loading}>
                 Restart design
               </button>
             </div>
