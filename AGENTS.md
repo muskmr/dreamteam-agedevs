@@ -13,8 +13,8 @@ SDLC tool. It is an npm-workspaces monorepo:
 - `agents/*.yaml`, `spec/`, `meta/dreamteam.json` — agent definitions, prompt
   templates, and orchestration config, loaded relative to the repo root.
 
-> Note: the repository's `main` branch is intentionally empty ("Clear repository").
-> Product B lives on its feature branch(es); do your work from there.
+> Product B lives on **`main`**. Open PRs against `main`. Use short branch names:
+> `feature/<topic>`, `fix/<topic>`, or `docs/<topic>` (no `cursor/` / `-9e71` suffixes).
 
 ### Running the app (dev)
 
@@ -81,4 +81,4 @@ reports `"ollama": false`.
 
 - Generated projects are written to `projects/` at runtime. Do not commit them
   (only `projects/.gitkeep` is tracked).
-- `.gitignore` ignores `node_modules/` and `encore.gen/`.
+- `.gitignore` ignores `node_modules/`.

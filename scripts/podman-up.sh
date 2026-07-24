@@ -72,7 +72,7 @@ Follow steps below in order, then run the installer again:
     Commands:
       git clone <this-repo-url>
       cd shiny-robo
-      git checkout <product-branch>
+      git checkout main
       npm run podman:up
 
 ────────────────────────────────────────────────────────
