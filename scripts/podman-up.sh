@@ -71,7 +71,7 @@ Follow steps below in order, then run the installer again:
 [2] On that machine
     Commands:
       git clone <this-repo-url>
-      cd shiny-robo
+      cd dreamteam-agedevs
       git checkout main
       npm run podman:up
 
