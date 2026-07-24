@@ -10,6 +10,10 @@ Spec-first multi-agent demo: React web + Node API + **local Ollama on the host**
 | **Linux** (x86_64 / arm64) | Supported |
 | **Windows** (native) | **Not supported** |
 
+### CI smoke (GitHub Actions)
+
+On every push/PR, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs build on **Ubuntu** and smoke (mock Ollama) on **Ubuntu + macOS 14 Apple Silicon** (`macos-14`). Local gate A (`npm run verify:a`) is Cloud/Linux only.
+
 ## Recommended: Podman single container (option C)
 
 App (API + web) runs in **one Podman container**. Ollama and the model stay on **bare metal**.
