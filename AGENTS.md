@@ -73,6 +73,8 @@ reports `"ollama": false`.
 
 - Typecheck+build API: `npm run build -w packages/api` (runs `tsc`).
 - Typecheck+build web: `npm run build -w packages/web` (`tsc -b && vite build`).
+- Gate A (this Cloud VM): `npm run verify:a` — Linux x86_64 only (build + API + Vite smoke).
+- Gate B (GitHub Actions): build on Ubuntu; smoke matrix on **ubuntu-latest** and **macos-14** (Apple Silicon), mock Ollama — see `.github/workflows/ci.yml`.
 - There is **no automated test suite and no linter configured** in this repo.
 
 ### Misc
