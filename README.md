@@ -5,6 +5,9 @@ Spec-first multi-agent demo: React web + Node API + **local Ollama on the host**
 **Canonical branch:** [`main`](https://github.com/muskmr/shiny-robo/tree/main).  
 New work: branch from `main` as `feature/<topic>`, `fix/<topic>`, or `docs/<topic>`, then open a PR into `main`.
 
+**License:** [MIT](LICENSE). Security reports: see [SECURITY.md](SECURITY.md).  
+Repo hardening: Dependabot (npm + Actions), CodeQL code scanning, and secret scanning / push protection (enable under GitHub **Settings → Code security** if not already on).
+
 ## Supported platforms
 
 | OS | Support |
@@ -89,6 +92,7 @@ Artifacts: `projects/<name>/…` (no database).
 ## Documentation
 
 - [Deploy (Podman option C)](docs/DEPLOY-PODMAN.md)
+- [Security policy](SECURITY.md)
 - [Path specification](spec/PATHS.md)
 - [Orchestrator](spec/ORCHESTRATOR.md)
 - [Templates](spec/TEMPLATES/)
