@@ -17,6 +17,6 @@
     "start": "npm run start -w packages/api"
   },
   "devDependencies": {
-    "concurrently": "^9.2.4"
+    "concurrently": "^10.0.4"
   }
 }
