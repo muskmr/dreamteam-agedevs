@@ -91,6 +91,7 @@ Artifacts: `projects/<name>/…` (no database).
 
 ## Documentation
 
+- [Local install (macOS)](docs/INSTALL-MAC.md)
 - [Deploy (Podman option C)](docs/DEPLOY-PODMAN.md)
 - [Security policy](SECURITY.md)
 - [Path specification](spec/PATHS.md)
