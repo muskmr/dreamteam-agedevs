@@ -82,3 +82,6 @@ reports `"ollama": false`.
 - Generated projects are written to `projects/` at runtime. Do not commit them
   (only `projects/.gitkeep` is tracked).
 - `.gitignore` ignores `node_modules/`.
+- Security: Dependabot (`.github/dependabot.yml`), CodeQL default setup, secret
+  scanning / push protection. Report vulns via [SECURITY.md](SECURITY.md).
+  License: [MIT](LICENSE).
