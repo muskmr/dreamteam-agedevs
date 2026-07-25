@@ -32,26 +32,28 @@ App (API + web) runs in **one Podman container**. Ollama and the model stay on *
 │  │ Podman       │     │ Ollama (on host, NOT in container)│ │
 │  │              │     │  ollama serve                     │ │
 │  │  podman build│     │  model: llama3.2                  │ │
-│  │  podman run  │     │  port :11434                      │ │
+│  │  podman run  │     │  $OLLAMA_URL                      │ │
 │  └──────┬───────┘     └─────────────▲─────────────────────┘ │
 │         │                             │                     │
-│         ▼                             │ OLLAMA_URL          │
+│         ▼                             │ $OLLAMA_URL         │
 │  ┌────────────────────────────────────┴──────────────────┐  │
 │  │  ONE CONTAINER  dreamteam-app                         │  │
 │  │  (image built from ./Containerfile in this repo)      │  │
 │  │                                                       │  │
-│  │     • API  (Express, :3001)                           │  │
-│  │     • WEB  (Vite,   :5173)                            │  │
+│  │     • API  (Express)                                  │  │
+│  │     • WEB  (Vite)                                     │  │
 │  │                                                       │  │
 │  │   volume:  ./projects  →  /app/projects               │  │
 │  └───────────────────────────┬───────────────────────────┘  │
 │                              │                              │
-│                    publish -p WEB_PORT:5173                 │
+│              publish via $WEB_PORT / $API_PORT              │
 └──────────────────────────────┼──────────────────────────────┘
                                ▼
-                         Browser → http://127.0.0.1:5173
+                         Browser → $WEB_URL
                          (UI shows Ollama connected / disconnected)
 ```
+
+Service URLs and ports come from [`env/aliases.sh`](env/aliases.sh) (`$WEB_URL`, `$API_URL`, `$OLLAMA_URL`, plus `$WEB_PORT` / `$API_PORT` / `$OLLAMA_PORT`). Override those env vars before sourcing aliases or before `podman:up` — docs do not hardcode host/port literals.
 
 ### Start (Podman)
 
@@ -63,7 +65,7 @@ git checkout main
 npm run podman:up
 ```
 
-The script detects OS/arch, audits **Podman**, prints install commands if missing, otherwise builds the image from [`Containerfile`](Containerfile), runs the container, and prints the Web URL.
+The script detects OS/arch, audits **Podman**, prints install commands if missing, otherwise builds the image from [`Containerfile`](Containerfile), runs the container, and prints `$WEB_URL`.
 
 - No Docker Compose required (single `podman build` + `podman run`).
 - Stop: `npm run podman:down`
@@ -80,7 +82,7 @@ source env/aliases.sh
 npm run dev
 ```
 
-Uses `$WEB_URL` / `$API_URL` from [`env/aliases.sh`](env/aliases.sh).
+Open `$WEB_URL`. API health: `curl "$API_URL/api/health"`.
 
 ## Usage
 
