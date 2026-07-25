@@ -18,13 +18,14 @@ Install and run DreamTeam locally: **one Podman container** for the app, **Ollam
    ollama pull llama3.2
    ```
 
-3. Confirm the API is up (Ollama’s local API endpoint — see Ollama docs / app status):
+3. Confirm the API is up. After you have cloned the repo:
 
    ```bash
+   source env/aliases.sh
    curl -s "$OLLAMA_URL/api/tags"
    ```
 
-   Or, if you have not set aliases yet, use Ollama’s default local URL from the app docs.
+   Or check status in the Ollama macOS app. Set `$OLLAMA_URL` yourself if you are not using the aliases yet.
 
 4. In **Ollama → Settings**:
    - leave **Expose Ollama to the network** **Off** (local use only)
@@ -50,7 +51,7 @@ npm run podman:up
 - runs one container (API + web) and points it at **host Ollama** via the container→host DNS name configured in the script
 - prints the **Web URL** to open in the browser
 
-Ports and bind addresses are controlled by environment variables when you start the stack (see the script / [`docs/DEPLOY-PODMAN.md`](DEPLOY-PODMAN.md)): typically overrides for the web UI, API, and Ollama service if the defaults are busy.
+Publish ports and bind addresses come from [`env/aliases.sh`](../env/aliases.sh) / the env vars consumed by `podman:up` (`$WEB_PORT`, `$API_PORT`, `$OLLAMA_PORT`, `$OLLAMA_URL`, …). Override them in your shell when a port is already in use — see [`docs/DEPLOY-PODMAN.md`](DEPLOY-PODMAN.md).
 
 Stop the stack:
 
@@ -72,7 +73,7 @@ npm run podman:down
 |---------|------------|
 | Podman not ready | Start Podman Desktop, or start the Podman machine from the CLI |
 | Ollama disconnected in UI | Ensure the Ollama app is running; pull `llama3.2`; check Ollama settings (network expose Off for local-only) |
-| Port already in use | Re-run `podman:up` with the port override env vars documented in the deploy script / [`docs/DEPLOY-PODMAN.md`](DEPLOY-PODMAN.md) |
+| Port already in use | Override `$WEB_PORT` / `$API_PORT` (and related aliases) in your shell, then re-run `podman:up` — see [`docs/DEPLOY-PODMAN.md`](DEPLOY-PODMAN.md) |
 | UI looks stuck after Approve | Wait; avoid Retry/Restart/Send while a run is in flight |
 
 ## Optional: bare-metal Node (no Podman)
@@ -86,7 +87,5 @@ npm run dev
 `env/aliases.sh` sets the local service URL variables used by the app. Keep Ollama running on the host as in step 1.
 
 ## UI (agent mode)
-
-![DreamTeam Agent UI — project workspace with Ollama connected](images/dreamteam-ui-agent-mode.png)
 
 The DreamTeam agent workspace: **Projects** / **Agent** / **Artifacts** / **Trace**, chat with Designer, and **Approve** / **Retry** / **Restart** design when waiting for review. Ollama connection status appears in the UI.
