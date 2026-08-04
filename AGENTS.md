@@ -31,6 +31,11 @@ In this Cloud VM specifically:
 - Start both servers from the repo root: `npm run dev`
   (uses `concurrently` → API via `tsx watch`, web via Vite; ports come from the aliases).
 - Health check: `curl "$API_URL/api/health"` → `{"ollama":true,...}` once Ollama is up.
+- Web smoke test: the Vite dev server binds the `localhost` hostname (resolves to
+  IPv6 `::1` on this VM), so `curl "$WEB_URL"` (which uses `127.0.0.1`) gets
+  "connection refused" even though the UI is up. Use `curl http://localhost:$WEB_PORT`
+  instead (or `curl "http://[::1]:$WEB_PORT"`). Browsing to `http://localhost:$WEB_PORT`
+  works; `/api` is proxied to the API from there.
 - Core flow: create a project → send a prompt (Designer agent runs and waits for
   user approval) → `approve` runs the rest of the pipeline. The web UI exposes all
   of this (Projects → Chat → Artifacts → Trace).
